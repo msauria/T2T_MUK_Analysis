@@ -1,0 +1,3 @@
+circos_data/*.txt
+circos_etc/chm13*
+circos_etc/hg38*
