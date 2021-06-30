@@ -5,6 +5,7 @@ import sys
 import pyBigWig
 import numpy
 
+
 def main():
     bw_fname, out_fname = sys.argv[1:3]
     target = int(sys.argv[3])
@@ -24,6 +25,7 @@ def main():
         for s, e in peaks:
             print("{}:{}-{} {}".format(chrom, s, e, e - s), file=output)
     output.close()
+
 
 def find_peaks(bw, chrom, start, end, maxlen, target, peaks):
     n = min(end - start, 10)
@@ -55,6 +57,7 @@ def find_peaks(bw, chrom, start, end, maxlen, target, peaks):
                     peaks = find_peaks(bw, chrom, bins[i], bins[i + 1], maxlen,
                                        target, peaks)
     return peaks
+
 
 if __name__ == "__main__":
     main()

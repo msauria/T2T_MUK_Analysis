@@ -3,6 +3,7 @@
 import sys
 import struct
 
+
 def main():
     fasta_fname, sa_fname, target_fname, out_fname, minsize = sys.argv[1:6]
     minsize = int(minsize)
@@ -30,9 +31,12 @@ def main():
         sa_index0 = struct.unpack("Q", sa.read(8))[0]
         sa_index1 = struct.unpack("Q", sa.read(8))[0]
         sa_index2 = struct.unpack("Q", sa.read(8))[0]
-        chrom0, index0, seq0 = get_seq(fa, sa_index0, span, chr_indices, chroms)
-        chrom1, index1, seq1 = get_seq(fa, sa_index1, span, chr_indices, chroms)
-        chrom2, index2, seq2 = get_seq(fa, sa_index2, span, chr_indices, chroms)
+        chrom0, index0, seq0 = get_seq(
+            fa, sa_index0, span, chr_indices, chroms)
+        chrom1, index1, seq1 = get_seq(
+            fa, sa_index1, span, chr_indices, chroms)
+        chrom2, index2, seq2 = get_seq(
+            fa, sa_index2, span, chr_indices, chroms)
         if sa_index0 < N:
             strand0 = "for"
         else:
@@ -76,6 +80,7 @@ def main():
         sa.seek(0, 0)
     output.close()
 
+
 def load_fasta(fname):
     chr_indices = []
     chroms = []
@@ -90,6 +95,7 @@ def load_fasta(fname):
             pos += len(fa[-1])
     chr_indices.append(pos)
     return "".join(fa), chr_indices, chroms
+
 
 def find_sa_index(sa, pos, start, end, seq, fa):
     mid = (end + start) // 2
@@ -107,6 +113,7 @@ def find_sa_index(sa, pos, start, end, seq, fa):
     else:
         return pos, mid, mid+1
 
+
 def revcomp(fa, index, span):
     if index > len(fa):
         index2 = len(fa) * 2 - index - span
@@ -117,6 +124,7 @@ def revcomp(fa, index, span):
         base = fa[i]
         seq.append(convert_base(base))
     return "".join(seq)
+
 
 def convert_base(base):
     if base == "A":
@@ -130,6 +138,7 @@ def convert_base(base):
     else:
         return "N"
 
+
 def get_seq(fa, index, span, chr_indices, chroms):
     if index < len(fa):
         index2 = index
@@ -141,7 +150,6 @@ def get_seq(fa, index, span, chr_indices, chroms):
     while index2 > chr_indices[chrint+1]:
         chrint += 1
     return (chroms[chrint], index2 - chr_indices[chrint], seq)
-
 
 
 if __name__ == "__main__":

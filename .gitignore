@@ -7,3 +7,7 @@ fasta
 logs
 plots/*svg
 results/*hist.txt
+bin/wigToBigWig
+bin/bigBedtoBed
+bin/minUniqueKmer
+BigWigs

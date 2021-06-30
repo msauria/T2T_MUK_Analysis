@@ -281,11 +281,6 @@ rule plot_circos_data:
         bg="results/{genome}_mu_binned.bg",
         key="plots/combined_mu_karyotype_key.txt"
     output:
-        #karyo="circos_data/{genome}_karyotype.txt",
-        #links="circos_data/{genome}_links.txt",
-        #missing="circos_data/{genome}_missing_mu.txt",
-        #mu="circos_data/{genome}_mu.txt",
-        #conf="circos_etc/{genome}_circos.conf",
         plot="plots/{genome}_mu_pairs.png"
     params:
         genome="{genome}",

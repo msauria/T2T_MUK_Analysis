@@ -4,6 +4,7 @@ import sys
 
 import numpy
 
+
 def main():
     size_fname, anno_fname, pairs_fname, bg_fname = sys.argv[1:5]
     color_fname, minsize, maxsize, conf_name, out_prefix = sys.argv[5:10]
@@ -15,7 +16,7 @@ def main():
     print("<colors>", file=output)
     for i in range(len(colors)):
         print("col_{} = {},{},{}".format(i, int(colors[i][1:3], 16),
-            int(colors[i][3:5], 16), int(colors[i][5:7], 16)), file=output)
+                                         int(colors[i][3:5], 16), int(colors[i][5:7], 16)), file=output)
     print("</colors>", file=output)
     output.close()
 
@@ -96,7 +97,7 @@ def main():
         w1 = numpy.where(arrays['chrom'] == chrom1)[0][0]
         w2 = numpy.where(arrays['chrom'] == chrom2)[0][0]
         if (m1 >= arrays['start'][w1] and m1 < arrays['end'][w1] and
-            m2 >= arrays['start'][w2] and m2 < arrays['end'][w2]):
+                m2 >= arrays['start'][w2] and m2 < arrays['end'][w2]):
             z = i
         else:
             z = i + links.shape[0]
@@ -178,12 +179,14 @@ def main():
         print(line, file=output)
     output.close()
 
+
 def load_colors(fname):
     colors = []
     for line in open(fname):
         c = line.rstrip().split()[1]
         colors.append(c)
     return colors
+
 
 def load_sizes(fname):
     chrom_sizes = {}
@@ -197,6 +200,7 @@ def load_sizes(fname):
         chroms.append(line[0])
         chrom_sizes[line[0]] = int(line[1])
     return chrom_sizes
+
 
 def load_arrays(fname):
     data = []
@@ -233,6 +237,7 @@ def load_arrays(fname):
         """
     return centro
 
+
 def load_data(fname):
     pairs = []
     for line in open(fname):
@@ -246,11 +251,12 @@ def load_data(fname):
         pairs.append((c1, s1, e1, (s1 + e1) // 2, c2, s2, e2, (s2 + e2) // 2,
                       e1 - s1))
     links = numpy.array(pairs, dtype=numpy.dtype([
-        ('c1', 'S20'), ('s1', numpy.int32),('e1', numpy.int32),
+        ('c1', 'S20'), ('s1', numpy.int32), ('e1', numpy.int32),
         ('m1', numpy.int32), ('c2', 'S20'), ('s2', numpy.int32),
         ('e2', numpy.int32), ('m2', numpy.int32), ('size', numpy.int32)]))
     links = links[numpy.argsort(links['size'])]
     return links
+
 
 def load_bg(fname, csizes):
     binsize = 200000
@@ -284,9 +290,11 @@ def load_bg(fname, csizes):
             new_data['end'][0] = binsize
         new_data['end'][-1] = min(new_data['end'][-1], csizes[chrom])
         data[chrom] = new_data
-        data[chrom]['score'] = numpy.log10(numpy.maximum(1, data[chrom]['score']))
+        data[chrom]['score'] = numpy.log10(
+            numpy.maximum(1, data[chrom]['score']))
         data[chrom]['score'] = numpy.minimum(5, data[chrom]['score'])
     return data
+
 
 if __name__ == "__main__":
     main()
