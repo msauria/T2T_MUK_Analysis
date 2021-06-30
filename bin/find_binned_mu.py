@@ -5,6 +5,7 @@ import sys
 import pyBigWig
 import numpy
 
+
 def main():
     mu_fname, out_fname, binsize = sys.argv[1:4]
     binsize = int(binsize)
@@ -23,6 +24,7 @@ def main():
                 print("{}\t{}\t{}\t{}".format(chrom, binsize*i,
                                               binsize*(i+1), s), file=output)
     output.close()
+
 
 if __name__ == "__main__":
     main()

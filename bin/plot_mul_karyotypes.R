@@ -56,28 +56,6 @@ for (i in 1:nrow(chm13)){
 for (i in 1:nrow(GRCh38)){
     g_indices = c(g_indices, findInterval(GRCh38$score[i], bins) + 1)
 }
-chm13$color = cmap[c_indices]
-GRCh38$color = cmap[g_indices]
-write.table(chm13, paste(strsplit(args[1], "\\.bg")[[1]][1], "_color.bg", sep=""),
-            sep="\t", row.names=F, col.names=F, quote=F)
-write.table(GRCh38, paste(strsplit(args[2], "\\.bg")[[1]][1], "_color.bg", sep=""),
-            sep="\t", row.names=F, col.names=F, quote=F)
-
-#for (i in 1:length(chroms)){
-#    mask = c()
-#    for (j in 1:nrow(chm13)) if (chm13$chr[j] == chroms[i]) mask = c(mask, j)
-#    N = length(mask)
-#    binsize = mean(chm13$end - chm13$start)
-#    chm13$cindex[mask] = chm13$cindex[mask][order(chm13$cindex[mask])]
-#    chm13$start[mask] = seq(0,N-1) * binsize + 1
-#    for (j in 1:N) chm13$end[mask[j]] = min(c_sizes$end[i], j * binsize + 1)
-#    mask = c()
-#    for (j in 1:nrow(GRCh38)) if (GRCh38$chr[j] == chroms[i]) mask = c(mask, j)
-#    N = length(mask)
-#    GRCh38$cindex[mask] = GRCh38$cindex[mask][order(GRCh38$cindex[mask])]
-#    GRCh38$start[mask] = seq(0,N-1) * binsize + 1
-#    for (j in 1:N) GRCh38$end[mask[j]] = min(c_sizes$end[i], j * binsize + 1)
-#}
 
 chm13$strand = "+"
 chm13_gr = makeGRangesFromDataFrame(

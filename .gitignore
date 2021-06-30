@@ -1,3 +1,9 @@
+.snakemake
 circos_data/*.txt
 circos_etc/chm13*
 circos_etc/hg38*
+data
+fasta
+logs
+plots/*svg
+results/*hist.txt

@@ -1,7 +1,7 @@
 T2T Minimum Unique K-mer Analysis
 =
 
-These scripts will recapitulate the analysis performed for the minimum unique k-mer analysis of GRCh38 and the T2T CHM13v1 reference genome.
+These scripts will recapitulate the analysis performed for the minimum unique k-mer analysis of GRCh38 and the T2T CHM13v1 reference genomes.
 
 Prerequisites:
 =
