@@ -1,7 +1,7 @@
 T2T Minimum Unique K-mer Analysis
 =
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5596590.svg)](https://zenodo.org/badge/latestdoi/5596590)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5596590.svg)](https://zenodo.org/record/5596590)
 
 These scripts will recapitulate the analysis performed for the minimum unique k-mer analysis of GRCh38 and the T2T CHM13v1 reference genomes.
 
