@@ -1,7 +1,7 @@
 SYSTEM  = "linux.x86_64"
 BINSIZE = 100000
 MINSIZE = 5000
-GENOMES = ["hg38", "chm13v1"]
+GENOMES = ["hg38", "chm13v1.0", "chm13v1.1"]
 
 GENOME_SET = "|".join(GENOMES)
 
@@ -18,19 +18,21 @@ rule all:
 
 rule get_chm13v1_fasta:
     output:
-        fa="fasta/chm13v1.fasta",
-        sizes="fasta/chm13v1.chrom.sizes"
+        fa="fasta/chm13{version}.fasta",
+        sizes="fasta/chm13{version}.chrom.sizes"
+    params:
+        version="{version}"
     log:
-        "logs/fasta/chm13v1_download.log"
+        "logs/fasta/chm13{version}_download.log"
     shell:
         """
-        wget -O {output.fa}.gz http://t2t.gi.ucsc.edu/chm13/hub/t2t-chm13-v1.0/genome/t2t-chm13-v1.0.fa.gz
+        wget -O {output.fa}.gz http://t2t.gi.ucsc.edu/chm13/hub/t2t-chm13-{params.version}/genome/t2t-chm13-{params.version}.fa.gz
         gzip -d -c {output.fa}.gz > {output.fa}
-        cat {output.fa} | awk 'BEGIN{{ OFS=""; ORS=""; tab="\t"; nl="\n"; tl=0 }}\
-                               {{ if ( NR == 1 ){{ split($1,A,">"); print A[2],tab; }} \
-                                  else {{ if ( $1 ~ /^>/ ){{ split($1,A,">"); print tl,nl,A[2],tab; tl = 0;}} \
+        cat {output.fa} | awk 'BEGIN{{ tl=0; }}\
+                               {{ if ( NR == 1 ){{ split($1,A,">"); printf "%s\\t", A[2]; }} \
+                                  else {{ if ( $1 ~ /^>/ ){{ split($1,A,">"); printf "%i\\n%s\\t", tl, A[2]; tl = 0; }} \
                                           else {{ tl = tl + length; }} }} }}\
-                               END{{ print tl,nl }}' | sort -r -k2,2n > {output.sizes}
+                               END{{ printf "%i\\n", tl; }}' | sort -k2,2nr > {output.sizes}
         """
 
 rule get_hg38_fasta:
@@ -43,25 +45,27 @@ rule get_hg38_fasta:
         """
         wget -O {output.fa}.gz https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/analysisSet/hg38.analysisSet.fa.gz
         gzip -d -c {output.fa}.gz > {output.fa}
-        cat {output.fa} | awk 'BEGIN{{ OFS=""; ORS=""; tab="\t"; nl="\n"; tl=0 }}\
-                               {{ if ( NR == 1 ){{ split($1,A,">"); print A[2],tab; }} \
-                                  else {{ if ( $1 ~ /^>/ ){{ split($1,A,">"); print tl,nl,A[2],tab; tl = 0;}} \
+        cat {output.fa} | awk 'BEGIN{{ tl=0; }}\
+                               {{ if ( NR == 1 ){{ split($1,A,">"); printf "%s\\t", A[2]; }} \
+                                  else {{ if ( $1 ~ /^>/ ){{ split($1,A,">"); printf "%i\\n%s\\t", tl, A[2]; tl = 0; }} \
                                           else {{ tl = tl + length; }} }} }}\
-                               END{{ print tl,nl }}' | sort -r -k2,2n > {output.sizes}
+                               END{{ printf "%i\\n", tl; }}' | sort -k2,2nr > {output.sizes}
         """
 
 rule get_chm13v1_annotations:
     input:
         "bin/bigBedToBed"
     output:
-        "data/chm13v1_cenSat_annotations.bed"
+        "data/chm13{version}_cenSat_annotations.bed"
+    params:
+        version="{version}"
     log:
-        "logs/fasta/chm13v1_annotations.log"
+        "logs/fasta/chm13{version}_annotations.log"
     shell:
         """
-        wget -O {output}.tmp.bb http://t2t.gi.ucsc.edu/chm13/hub/t2t-chm13-v1.0/cenSatAnnotation.bigBed
+        wget -O {output}.tmp.bb http://t2t.gi.ucsc.edu/chm13/hub/t2t-chm13-{params.version}/cenSatAnnotation.bigBed
         {input} {output}.tmp.bb {output}.tmp
-        awk 'BEGIN{{ OFS="\t"}}{{ split($4,A,"_"); print $1,$2,$3,A[1] }}' \
+        awk 'BEGIN{{ OFS="\t" }}{{ split($4,A,"_"); print $1,$2,$3,A[1] }}' \
             {output}.tmp > {output}
         rm {output}.tmp*
         """
@@ -108,6 +112,19 @@ rule build_minUniqueKmers:
         chmod a+rx {output}
         """
 
+rule build_meanKmerCoverage:
+    input:
+        "bin/minUniqueKmer/find_minUniqueKmer.sh"
+    output:
+        "bin/minUniqueKmer/meanKmerCoverage"
+    log:
+        "logs/sw/minUniqueKmer.log"
+    shell:
+        """
+        g++ bin/minUniqueKmer/meanKmerCoverage.cpp -o bin/minUniqueKmer/meanKmerCoverage -std=c++11
+        chmod a+rx {output}
+        """
+
 
 ######## Make MUs #########
 
@@ -144,6 +161,40 @@ rule make_MU_bigwig:
         """
         {input.sw} {input.mu} {input.sizes} {output}
         """
+
+rule make_mappability_wig:
+    input:
+        mul="fasta/{genome}.fasta.mul.wig",
+        mur="fasta/{genome}.fasta.mur.wig",
+        sizes="fasta/{genome}.chrom.sizes",
+        sw="bin/minUniqueKmer/meanKmerCoverage"
+    output:
+        "fasta/{genome}.{kmer}mer_mappability.wig"
+    params:
+        kmer="{kmer}"
+    wildcard_constraints:
+        genome=GENOME_SET,
+        kmer="/d+"
+    shell:
+        """
+        {input.sw} {params.kmer} {input.sizes} {input.mul} {input.mur} {output}
+        """
+
+rule make_mappability_bigwig:
+    input:
+        wig="fasta/{genome}.{kmer}mer_mappability.wig",
+        sizes="fasta/{genome}.chrom.sizes",
+        sw="bin/wigToBigWig"
+    output:
+        "BigWigs/{genome}_{kmer}mer_mappability.bw"
+    wildcard_constraints:
+        genome=GENOME_SET,
+        kmer="/d+"
+    shell:
+        """
+        {input.sw} {input.wig} {input.sizes} {output}
+        """
+
 
 
 ######## Analysis #########
@@ -224,15 +275,15 @@ rule find_mu_seq_pairs:
 
 rule plot_combined_karyotype:
     input:
-        "results/chm13v1_mu_hist.txt",
+        "results/chm13{version}_mu_hist.txt",
         "results/hg38_mu_hist.txt",
-        "fasta/chm13v1.chrom.sizes",
+        "fasta/chm13{version}.chrom.sizes",
         "fasta/hg38.chrom.sizes"
     output:
-        pdf="plots/combined_mu_karyotype.pdf",
-        key="plots/combined_mu_karyotype_key.txt"
+        pdf="plots/chm13{version}_combined_mu_karyotype.pdf",
+        key="plots/chm13{version}_combined_mu_karyotype_key.txt"
     log:
-        "logs/R/combined_mu_karyotype.log"
+        "logs/R/chm13v1{version}_combined_mu_karyotype.log"
     conda:
         "envs/circos.yaml"
     shell:
@@ -242,14 +293,14 @@ rule plot_combined_karyotype:
 
 rule plot_karyotype:
     input:
-        "results/chm13v1_mu_binned.bg",
+        "results/chm13{version}_mu_binned.bg",
         "results/hg38_mu_binned.bg",
-        "fasta/chm13v1.chrom.sizes",
+        "fasta/chm13{version}.chrom.sizes",
         "fasta/hg38.chrom.sizes"
     output:
-        pdf="plots/individual_mu_karyotypes.pdf"
+        pdf="plots/chm13{version}_individual_mu_karyotypes.pdf"
     log:
-        "logs/R/individual_mu_karyotype.log"
+        "logs/R/chm13{version}_individual_mu_karyotype.log"
     conda:
         "envs/circos.yaml"
     shell:
@@ -259,13 +310,13 @@ rule plot_karyotype:
 
 rule plot_key:
     input:
-        "plots/combined_mu_karyotype_key.txt"
+        "plots/chm13{version}_combined_mu_karyotype_key.txt"
     output:
-        "plots/mu_{orientation}_key.pdf"
+        "plots/chm13{version}_mu_{orientation}_key.pdf"
     params:
         orientation="{orientation}"
     log:
-        "logs/R/{orientation}_key.log"
+        "logs/R/chm13{version}_{orientation}_key.log"
     conda:
         "envs/circos.yaml"
     shell:
@@ -273,18 +324,30 @@ rule plot_key:
         Rscript bin/plot_key_{params.orientation}.R {input} {output}
         """
 
+def circos_inputs(wc):
+    inputs = {}
+    if wc.genome.count('hg38') > 0:
+        genome, version = wc.genome.split("_")
+    else:
+        genome = wc.genome
+        version = wc.genome
+    inputs['sizes'] = "fasta/{}.chrom.sizes".format(genome)
+    inputs['anno'] = "data/{}_cenSat_annotations.bed".format(genome)
+    inputs['pairs'] = "results/{}_mu_pairs.txt".format(genome)
+    inputs['bg'] = "results/{}_mu_binned.bg".format(genome)
+    inputs['key'] = "plots/{}_combined_mu_karyotype_key.txt".format(version)
+    return inputs
+
 rule plot_circos_data:
     input:
-        sizes="fasta/{genome}.chrom.sizes",
-        anno="data/{genome}_cenSat_annotations.bed",
-        pairs="results/{genome}_mu_pairs.txt",
-        bg="results/{genome}_mu_binned.bg",
-        key="plots/combined_mu_karyotype_key.txt"
+        unpack(circos_inputs)
     output:
         plot="plots/{genome}_mu_pairs.png"
     params:
         genome="{genome}",
         minsize=MINSIZE
+    wildcard_constraints:
+        genome=["hg38_chm13v1.0|hg38_chm13v1.1|chm13v1.0|chm13v1.1"]
     log:
         "logs/circos/{genome}.plot.log"
     conda:
